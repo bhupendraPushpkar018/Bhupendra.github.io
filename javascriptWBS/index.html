@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search with Debouncing and Throttling</title>
+</head>
+<body>
+  <h1>Search Bar with Debouncing and Throttling</h1>
+  <input
+    type="text"
+    id="search-bar"
+    placeholder="Type to search..."
+    oninput="handleInput(event)"
+  />
+  <div id="results"></div>
+
+  <script>
+    // Function to simulate an API request
+    function fetchResults(query) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(`Results for "${query}"`);
+        }, 1000); // Simulate a 1-second delay for the API call
+      });
+    }
+
+    // Update the results on the page
+    async function updateResults(query) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.textContent = 'Loading...';
+
+      const results = await fetchResults(query);
+      resultsDiv.textContent = results;
+    }
+
+    // Debounce function
+    function debounce(func, delay) {
+      let timer;
+      return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          func.apply(this, args);
+        }, delay);
+      };
+    }
+
+    // Throttle function
+    function throttle(func, limit) {
+      let lastFunc;
+      let lastRan;
+
+      return function (...args) {
+        const now = Date.now();
+        if (!lastRan || now - lastRan >= limit) {
+          func.apply(this, args);
+          lastRan = now;
+        } else {
+          clearTimeout(lastFunc);
+          lastFunc = setTimeout(() => {
+            if (Date.now() - lastRan >= limit) {
+              func.apply(this, args);
+              lastRan = Date.now();
+            }
+          }, limit - (now - lastRan));
+        }
+      };
+    }
+
+    // Main search function
+    const searchHandler = async (event) => {
+      const query = event.target.value.trim();
+      if (query) {
+        updateResults(query);
+      } else {
+        document.getElementById('results').textContent = '';
+      }
+    };
+
+    // Wrap searchHandler with both debounce and throttle
+    const debouncedAndThrottledSearch = debounce(throttle(searchHandler, 500), 300);
+
+    // Event handler for input
+    function handleInput(event) {
+      debouncedAndThrottledSearch(event);
+    }
+  </script>
+</body>
+</html>
